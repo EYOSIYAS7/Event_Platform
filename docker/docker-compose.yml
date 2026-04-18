@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  # ─── Combined Database ────────────────────────────────────
+  postgres-db:
+    image: postgis/postgis:16-3.4-alpine # Uses PostGIS image for all DBs
+    container_name: event-platform-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users_db # This creates the first DB automatically
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # ─── Redis (shared) ────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: event-platform-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres-data:
+  redis-data:

@@ -1,0 +1,94 @@
+version: "3.9"
+
+services:
+  # ─── Databases (one per service) ───────────────────────────
+  db-users:
+    image: postgres:16-alpine
+    container_name: db-users
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-users-data:/var/lib/postgresql/data
+
+  db-events:
+    image: postgis/postgis:16-3.4-alpine # PostGIS for geospatial search
+    container_name: db-events
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: events_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-events-data:/var/lib/postgresql/data
+
+  db-bookings:
+    image: postgres:16-alpine
+    container_name: db-bookings
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bookings_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - db-bookings-data:/var/lib/postgresql/data
+
+  db-payments:
+    image: postgres:16-alpine
+    container_name: db-payments
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: payments_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - db-payments-data:/var/lib/postgresql/data
+
+  db-notifications:
+    image: postgres:16-alpine
+    container_name: db-notifications
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: notifications_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - db-notifications-data:/var/lib/postgresql/data
+
+  db-analytics:
+    image: postgres:16-alpine
+    container_name: db-analytics
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: analytics_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - db-analytics-data:/var/lib/postgresql/data
+
+  # ─── Redis (shared) ────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  db-users-data:
+  db-events-data:
+  db-bookings-data:
+  db-payments-data:
+  db-notifications-data:
+  db-analytics-data:
+  redis-data:
