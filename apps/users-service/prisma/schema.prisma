@@ -1,13 +1,83 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  GITHUB
+}
+
+enum UserRole {
+  ATTENDEE
+  ORGANIZER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String?                        // null for OAuth-only users
+  firstName    String
+  lastName     String
+  avatarUrl    String?
+  role         UserRole   @default(ATTENDEE)
+  status       UserStatus @default(ACTIVE)
+  provider     AuthProvider @default(LOCAL)
+  providerId   String?                        // OAuth provider's user ID
+  isVerified   Boolean    @default(false)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  sessions     Session[]
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([provider, providerId])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  userAgent String?
+  ipAddress String?
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique          // store hashed, never raw
+  sessionId String?
+  isRevoked Boolean  @default(false)
+  family    String                    // token family for rotation breach detection
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([family])
+  @@map("refresh_tokens")
 }
