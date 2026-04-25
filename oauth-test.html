@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+  <head>
+    <title>OAuth Test</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 600px;
+        margin: 60px auto;
+        padding: 0 20px;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 8px 0;
+        cursor: pointer;
+        font-size: 14px;
+        border: none;
+        border-radius: 6px;
+        color: white;
+      }
+      .google {
+        background: #4285f4;
+      }
+      .github {
+        background: #333;
+      }
+      pre {
+        background: #f4f4f4;
+        padding: 16px;
+        border-radius: 6px;
+        overflow: auto;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>OAuth2 Test</h2>
+
+    <button
+      class="google"
+      onclick="window.location.href = 'http://localhost:3001/v1/auth/google'"
+    >
+      Login with Google
+    </button>
+
+    <button
+      class="github"
+      onclick="window.location.href = 'http://localhost:3001/v1/auth/github'"
+    >
+      Login with GitHub
+    </button>
+
+    <h3>Result</h3>
+    <pre id="result">Tokens will appear here after login...</pre>
+
+    <script>
+      // On page load, check if we landed back here with tokens in the URL
+      // (you'd set this up in the callback to redirect back here with tokens as query params)
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get("accessToken");
+      const refreshToken = params.get("refreshToken");
+
+      if (accessToken) {
+        document.getElementById("result").textContent = JSON.stringify(
+          { accessToken, refreshToken },
+          null,
+          2,
+        );
+        // Save to localStorage so you can copy them into Postman
+        localStorage.setItem("accessToken", accessToken);
+        console.log("Access token saved to localStorage");
+      }
+    </script>
+  </body>
+</html>

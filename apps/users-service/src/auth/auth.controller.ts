@@ -10,7 +10,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import express from 'express';
+import type {
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+} from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
@@ -43,7 +46,7 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK) // Override default 201 POST → 200 for login
-  async login(@Req() req: express.Request) {
+  async login(@Req() req: ExpressRequest) {
     const userAgent = req.headers['user-agent'];
     const ipAddress = req.ip;
     return this.authService.login(req.user as any, userAgent, ipAddress);
@@ -64,7 +67,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: express.Request) {
+  async logout(@Req() req: ExpressRequest) {
     const authHeader = req.headers['authorization'];
     const accessToken = authHeader?.split(' ')[1];
     const user = req.user as any;
@@ -82,7 +85,7 @@ export class AuthController {
   // Useful for the frontend to hydrate the current user on app load.
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async me(@Req() req: express.Request) {
+  async me(@Req() req: ExpressRequest) {
     const user = req.user as any;
     const fullUser = await this.usersService.findById(user.id);
     return this.usersService.sanitize(fullUser!);
@@ -102,16 +105,18 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   async googleCallback(
-    @Req() req: express.Request,
-    @Res() res: express.Response,
+    @Req() req: ExpressRequest,
+    @Res() res: ExpressResponse,
   ) {
     const tokens = await this.authService.oauthLogin(req.user as any);
 
-    // In a real app you'd redirect to the frontend with tokens in query params
-    // or set them as httpOnly cookies. For now we return JSON.
-    return res.json(tokens);
+    // In dev — redirect back to test page with tokens
+    // In production — redirect to your frontend app
+    const frontendUrl = `http://localhost:5500/oauth-test.html`;
+    return res.redirect(
+      `${frontendUrl}?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`,
+    );
   }
-
   // ─── HTTP: GitHub OAuth — initiate ──────────────────────────
   @Get('github')
   @UseGuards(GithubAuthGuard)
@@ -121,11 +126,15 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(GithubAuthGuard)
   async githubCallback(
-    @Req() req: express.Request,
-    @Res() res: express.Response,
+    @Req() req: ExpressRequest,
+    @Res() res: ExpressResponse,
   ) {
     const tokens = await this.authService.oauthLogin(req.user as any);
-    return res.json(tokens);
+
+    const frontendUrl = `http://localhost:5500/oauth-test.html`;
+    return res.redirect(
+      `${frontendUrl}?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`,
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════
