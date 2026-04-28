@@ -3,4 +3,5 @@ node_modules
 .env.example
 .env.local
 dist
-.turbo
+.turbo
+.ignored_node_modules
