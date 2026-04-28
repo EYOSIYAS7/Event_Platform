@@ -1,13 +1,125 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum EventStatus {
+  DRAFT        // created but not yet published
+  PUBLISHED    // visible and bookable
+  CANCELLED    // cancelled by organizer
+  COMPLETED    // event has passed
+  SOLDOUT      // all tickets taken
+}
+
+enum EventVisibility {
+  PUBLIC       // visible to everyone
+  PRIVATE      // invite-only, hidden from search
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique  // Music, Tech, Sports, Arts, etc.
+  slug        String   @unique  // music, tech, sports, arts
+  description String?
+
+  createdAt   DateTime @default(now())
+
+  events      Event[]
+
+  @@map("categories")
+}
+
+model Event {
+  id            String          @id @default(uuid())
+  title         String
+  slug          String          @unique   // URL-friendly version of title
+  description   String
+  organizerId   String                    // references User.id in users-service
+  categoryId    String
+
+  // Location — stored as separate fields for querying flexibility
+  // We also store lat/lng for geo-based search later (PostGIS)
+  venueName     String
+  address       String
+  city          String
+  country       String
+  latitude      Float?
+  longitude     Float?
+
+  // Timing
+  startDate     DateTime
+  endDate       DateTime
+  timezone      String          @default("UTC")
+
+  // Capacity — total across all ticket tiers
+  // We keep a denormalized total here for quick availability checks
+  // without having to sum across all tiers every time
+  totalCapacity Int
+  totalBooked   Int             @default(0)
+
+  status        EventStatus     @default(DRAFT)
+  visibility    EventVisibility @default(PUBLIC)
+
+  // Cover image URL — full image list is in EventImage
+  coverImage    String?
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  category      Category        @relation(fields: [categoryId], references: [id])
+  ticketTiers   TicketTier[]
+  images        EventImage[]
+
+  @@index([organizerId])
+  @@index([categoryId])
+  @@index([status, visibility])
+  @@index([startDate])
+  @@index([city, country])
+  @@map("events")
+}
+
+model TicketTier {
+  id            String   @id @default(uuid())
+  eventId       String
+  name          String                      // e.g. "General Admission", "VIP"
+  description   String?
+  price         Decimal  @db.Decimal(10, 2) // store as decimal, never float for money
+  currency      String   @default("USD")
+  capacity      Int                         // seats available for this tier
+  booked        Int      @default(0)        // seats booked so far
+  maxPerOrder   Int      @default(10)       // max tickets per single booking
+
+  // Sale window — tiers can open/close at different times
+  // e.g. Early Bird closes before General Admission
+  saleStart     DateTime?
+  saleEnd       DateTime?
+
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("ticket_tiers")
+}
+
+model EventImage {
+  id        String   @id @default(uuid())
+  eventId   String
+  url       String
+  altText   String?
+  isPrimary Boolean  @default(false)
+  order     Int      @default(0)
+
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("event_images")
 }
