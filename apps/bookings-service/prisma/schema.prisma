@@ -1,13 +1,47 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output = "../node_modules/@prisma/client-bookings"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum BookingStatus {
+  PENDING     // seats reserved, awaiting payment
+  CONFIRMED   // payment successful
+  CANCELLED   // payment failed, timed out, or event cancelled
+  REFUNDED    // user cancelled after payment
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  userId        String                              // from users-service
+  eventId       String                              // from events-service
+  tierId        String                              // TicketTier id
+  quantity      Int
+  unitPrice     Decimal       @db.Decimal(10, 2)   // price at time of booking
+  totalAmount   Decimal       @db.Decimal(10, 2)   // unitPrice × quantity
+  currency      String        @default("USD")
+  status        BookingStatus @default(PENDING)
+
+  // QR code stored as a data URL string
+  // Generated on confirmation, used for event entry
+  qrCode        String?
+
+  // Payment reference — populated after payment-service confirms
+  paymentId     String?       @unique
+
+  // Booking expires if payment not received within 15 minutes
+  // A background job will cancel expired pending bookings
+  expiresAt     DateTime
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("bookings")
 }
