@@ -13,6 +13,7 @@ import { GatewayAuthGuard } from './guards/auth.guard';
 import { RedisThrottlerStorage } from './throttler/redis-throttler.store';
 import { HealthController } from './health/health.controller';
 import { UsersProxyMiddleware } from './proxy/users.proxy.controller';
+import { EventsProxyMiddleware } from './proxy/event.proxy.controller';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
@@ -43,5 +44,9 @@ export class AppModule implements NestModule {
     consumer
       .apply(UsersProxyMiddleware)
       .forRoutes({ path: 'users/*path', method: RequestMethod.ALL });
+
+    consumer
+      .apply(EventsProxyMiddleware)
+      .forRoutes({ path: 'events-service/*path', method: RequestMethod.ALL });
   }
 }

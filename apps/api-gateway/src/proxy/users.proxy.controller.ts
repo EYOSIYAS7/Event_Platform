@@ -18,13 +18,18 @@ export class UsersProxyMiddleware implements NestMiddleware {
         return rewritten;
       },
       on: {
-        // Log what users-service actually responds with
-        proxyRes: (proxyRes, req, res) => {
+        proxyReq: (proxyReq, req: any) => {
+          if (req.user) {
+            proxyReq.setHeader('x-user-id', req.user.id);
+            proxyReq.setHeader('x-user-email', req.user.email);
+            proxyReq.setHeader('x-user-role', req.user.role);
+          }
+        },
+        proxyRes: (proxyRes, req) => {
           console.log('users-service responded:', proxyRes.statusCode, req.url);
         },
-        // Log any proxy errors
-        error: (err, req, res) => {
-          console.error('Proxy error:', err.message);
+        error: (err) => {
+          console.error('Users proxy error:', err.message);
         },
       },
     });

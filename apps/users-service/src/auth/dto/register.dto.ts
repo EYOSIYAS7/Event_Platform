@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsEnum,
 } from 'class-validator';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client-users';
 
 export class RegisterDto {
   @IsEmail()
