@@ -11,7 +11,11 @@ async function bootstrap() {
 
   // Skip body parsing for any route that gets proxied
   // Add new service prefixes here as we build them
-  const proxiedRoutes = ['/v1/users', '/v1/events-service'];
+  const proxiedRoutes = [
+    '/v1/users',
+    '/v1/events-service',
+    '/v1/bookings-service',
+  ];
 
   app.use((req: any, res: any, next: any) => {
     const isProxied = proxiedRoutes.some((route) => req.path.startsWith(route));
